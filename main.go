@@ -17,23 +17,34 @@ var (
 )
 
 func main() {
-	// // Start
-	// ctx, _ := context.WithTimeout(context.Background(), requestTimeout)
-	// cli, err := clientv3.New(clientv3.Config{
-	// 	DialTimeout: dialTimeout,
-	// 	Endpoints:   endPoints,
-	// })
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	// defer cli.Close()
+	// Start
+	ctx, _ := context.WithTimeout(context.Background(), requestTimeout)
+	cli, err := clientv3.New(clientv3.Config{
+		DialTimeout: dialTimeout,
+		Endpoints:   endPoints,
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer cli.Close()
 
-	// kv := clientv3.NewKV(cli)
+	kv := clientv3.NewKV(cli)
 
-	// // CreateNew(ctx, kv, "crypto", "BUY_VALUE", "100")
-	// PutMultipleExample(ctx, kv)
-	// // Convert(ctx, kv)
-	Convert()
+	// CreateNew(ctx, kv, "crypto", "BUY_VALUE", "100")
+
+	prefix := "general/crypto/version/SELL_VALUE"
+	gr, err := GetWithPrefix(ctx, kv, prefix)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	if len(gr.Kvs) == 0 {
+		fmt.Println("No Data Found!")
+		return
+	}
+	for i := 0; i < len(gr.Kvs); i++ {
+		fmt.Println("Key: " + string(gr.Kvs[i].Key) + ", Value: " + string(gr.Kvs[i].Value))
+	}
 }
 
 /* ========== Usecase ========== */
@@ -81,7 +92,6 @@ func CreateNew(ctx context.Context, kv clientv3.KV, serviceName string, keyName 
 
 	lastNum := len(gr.Kvs) - 1
 	fmt.Println(string(gr.Kvs[lastNum].Key) + "\n" + string(gr.Kvs[lastNum].Value))
-
 }
 
 /* ========== Repo ========== */
@@ -116,20 +126,21 @@ func PutOne(ctx context.Context, kv clientv3.KV, key string, value string) (*cli
 	return pr, nil
 }
 
+// /*
 func PutMultipleExample(ctx context.Context, kv clientv3.KV) {
 	for i := 0; i < 100; i++ {
-		// if i%2 == 0 {
-		// 	k := fmt.Sprintf("key_%02d", i)
-		// 	kv.Put(ctx, k, strconv.Itoa(i))
-		// } else if i%3 == 0 {
-		// 	k := fmt.Sprintf("key_%02d", i)
-		// 	kv.Put(ctx, k, "true")
-		// } else {
-		// 	k := fmt.Sprintf("key_%02d", i)
-		// 	kv.Put(ctx, k, "something")
-		// }
-		k := fmt.Sprintf("key_%02d", i)
-		kv.Put(ctx, k, strconv.Itoa(i))
+		if i%2 == 0 {
+			k := fmt.Sprintf("key_%02d", i)
+			kv.Put(ctx, k, strconv.Itoa(i))
+		} else if i%3 == 0 {
+			k := fmt.Sprintf("key_%02d", i)
+			kv.Put(ctx, k, "true")
+		} else {
+			k := fmt.Sprintf("key_%02d", i)
+			kv.Put(ctx, k, "something")
+		}
+		// k := fmt.Sprintf("key_%02d", i)
+		// kv.Put(ctx, k, strconv.Itoa(i))
 	}
 }
 
@@ -152,26 +163,28 @@ func Convert() {
 		clientv3.WithSort(clientv3.SortByKey, clientv3.SortAscend),
 	}
 
-	_, err = kv.Get(ctx, "key", opts...)
+	gr, err := kv.Get(ctx, "key", opts...)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	// var str string
-	// var integer int
-	// var boolean bool
+	var str string
+	var integer int
+	var boolean bool
 
-	// for i := 0; i < len(gr.Kvs); i++ {
-	// 	if string(gr.Kvs[i].Value) == "true" {
-	// 		boolean = true
-	// 	} else if string(gr.Kvs[i].Value) == "false" {
-	// 		boolean = false
-	// 	} else if num, err := strconv.Atoi(string(gr.Kvs[i].Value)); err == nil {
-	// 		integer = num
-	// 	} else {
-	// 		str = string(gr.Kvs[i].Value)
-	// 	}
-	// }
+	for i := 0; i < len(gr.Kvs); i++ {
+		if string(gr.Kvs[i].Value) == "true" {
+			boolean = true
+		} else if string(gr.Kvs[i].Value) == "false" {
+			boolean = false
+		} else if num, err := strconv.Atoi(string(gr.Kvs[i].Value)); err == nil {
+			integer = num
+		} else {
+			str = string(gr.Kvs[i].Value)
+		}
+	}
 
-	// fmt.Println(str, integer, boolean)
+	fmt.Println(str, integer, boolean)
 }
+
+// */
